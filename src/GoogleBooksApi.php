@@ -113,14 +113,15 @@ class GoogleBooksApi implements \Iterator, \Countable
      * @var array
      */
     private $paramaters = [
-        'q' => '',
-        'download' => '',
-        'filter' => '',
+        'country'    => 'US',
+        'q'          => '',
+        'download'   => '',
+        'filter'     => '',
         'startIndex' => 0,
         'maxResults' => 10,
-        'printType' => '',
+        'printType'  => '',
         'projection' => '',
-        'orderBy' => ''
+        'orderBy'    => '',
     ];
 
     /**
@@ -169,6 +170,21 @@ class GoogleBooksApi implements \Iterator, \Countable
             return $this->current_result[0];
         }
         return null;
+    }
+
+    /**
+     * Get all the result.
+     *
+     * @return array|null
+     */
+    public function all()
+    {
+        $this->rewind();
+        $result = [];
+        foreach ($this as $book) {
+            $result[] = $book;
+        }
+        return $result;
     }
 
     /**
@@ -298,7 +314,7 @@ class GoogleBooksApi implements \Iterator, \Countable
     }
 
     /**
-     * Add a `q` paramater.
+     * Add to the `q` paramater.
      *
      * @param string $name
      * @param string|bool $value
@@ -314,6 +330,110 @@ class GoogleBooksApi implements \Iterator, \Countable
         if (in_array($name, ['', 'intitle', 'inauthor', 'inpublisher', 'subject', 'isbn', 'lccn', 'oclc'])) {
             $this->add('q', $name, $value);
         }
+        return $this;
+    }
+
+    /**
+     * Appends `$value` to the `q` paramater.
+     *
+     * @param string $value
+     *
+     * @return GoogleBooksApi
+     */
+    public function search($value)
+    {
+        $this->query('', $value);
+        return $this;
+    }
+
+    /**
+     * Appends `intitle:$value` to the `q` paramater.
+     *
+     * @param string $value
+     *
+     * @return GoogleBooksApi
+     */
+    public function title($value)
+    {
+        $this->query('intitle', $value);
+        return $this;
+    }
+
+    /**
+     * Appends `inpublisher:$value` to the `q` paramater.
+     *
+     * @param string $value
+     *
+     * @return GoogleBooksApi
+     */
+    public function publisher($value)
+    {
+        $this->query('inpublisher', $value);
+        return $this;
+    }
+
+    /**
+     * Appends `subject:$value` to the `q` paramater.
+     *
+     * @param string $value
+     *
+     * @return GoogleBooksApi
+     */
+    public function subject($value)
+    {
+        $this->query('subject', $value);
+        return $this;
+    }
+
+    /**
+     * Appends `isbn:$value` to the `q` paramater.
+     *
+     * @param string $value
+     *
+     * @return GoogleBooksApi
+     */
+    public function isbn($value)
+    {
+        $this->query('isbn', $value);
+        return $this;
+    }
+
+    /**
+     * Appends `lccn:$value` to the `q` paramater.
+     *
+     * @param string $value
+     *
+     * @return GoogleBooksApi
+     */
+    public function lccn($value)
+    {
+        $this->query('lccn', $value);
+        return $this;
+    }
+
+    /**
+     * Appends `oclc:$value` to the `q` paramater.
+     *
+     * @param string $value
+     *
+     * @return GoogleBooksApi
+     */
+    public function oclc($value)
+    {
+        $this->query('oclc', $value);
+        return $this;
+    }
+
+    /**
+     * Appends `inauthor:xxxx` to the `q` paramater.
+     *
+     * @param string $value
+     *
+     * @return GoogleBooksApi
+     */
+    public function author($value)
+    {
+        $this->query('inauthor', $value);
         return $this;
     }
 
@@ -403,16 +523,28 @@ class GoogleBooksApi implements \Iterator, \Countable
             }
         }
 
+        $connection_failed = false;
 
-        $response = (new Client())->request('GET', $this->client_path, [
-            'base_uri'    => $this->client_uri,
-            'query'       => $query_data,
-            'http_errors' => false,
-        ]);
+        try {
+            $response = (new Client())->get($this->client_path, [
+                'base_uri'    => $this->client_uri,
+                'query'       => $query_data,
+                'http_errors' => false,
+            ]);
+        } catch (\GuzzleHttp\Exception\ConnectException $exception) {
+            $connection_failed = true;
+            $connection_status = $exception->getMessage();
+        }
 
-        if (($status = $response->getStatusCode()) != 200) {
+        // Request has failed.
+        if ($connection_failed || ($status = $response->getStatusCode()) != 200) {
             $this->had_error = true;
-            $this->last_error = 'Invalid response. Status: '.$status.'. Body: '.$response->getBody();
+            if (isset($status)) {
+                $this->last_error = 'Invalid response. Status: '.$status.'. Body: '.$response->getBody();
+            } elseif (isset($connection_status)) {
+                $this->last_error = $connection_status;
+            }
+            $this->result_total_count = 0;
             return $this;
         }
 
@@ -555,6 +687,6 @@ class GoogleBooksApi implements \Iterator, \Countable
         if ($this->request_limit !== false && $this->request_limit < $this->key()+1) {
             return false;
         }
-        return !$this->error() && ((($this->current_page - 1) * $this->result_records_per_page) + $this->current_record) <= $this->result_total_count;
+        return !$this->error() && ((($this->current_page - 1) * $this->result_records_per_page) + $this->current_record) < $this->result_total_count;
     }
 }
