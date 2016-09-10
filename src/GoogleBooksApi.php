@@ -561,6 +561,7 @@ class GoogleBooksApi implements \Iterator, \Countable
                 switch ($item_detail['kind']) {
                     case 'books#volume':
                         $detail = $item_detail['volumeInfo'];
+                        $detail['google_book_id'] = $item_detail['id'];
                         if (!empty($item_detail['searchInfo']['textSnippet'])) {
                             $detail['searchInfo'] = $item_detail['searchInfo']['textSnippet'];
                         }
