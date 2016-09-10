@@ -1,10 +1,13 @@
 Google Books API for PHP
 ========================
-A easy to use client for using Google Books API.
+An easy to use php client for using Google Books API.
+
+## Requirements
+
+* [PHP](https://php.net) 5.5+
+* [Google API](https://console.developers.google.com) Service account key
 
 ## Installation
-
-[PHP](https://php.net) 5.5+
 
 ```bash
 $ composer require bluora/php-google-books-api dev-master
@@ -18,45 +21,40 @@ Then run `composer update` to download the package to your vendor directory.
 
 ## Configuration
 
-There are several ways to set the key needed.
+There are several ways to set the Google API Service account key.
 
-Either through an envionrment file, using `putenv` in a config file or at time of use.
+Using your envionrment file, using `putenv` in a config file, or at time of use of the GoogleBookApi class instantiation.
 
 .env file
 ```
-GOOGLE_BOOKS_API_KEY={ ... }
+GOOGLE_BOOKS_API_KEY="xxx...xxx"
 ```
 
 PHP Configuration
 ```php
-
-putenv('GOOGLE_BOOKS_API_KEY=' . file_get_contents(__DIR__.'/GoogleApiServiceKey.json'));
-
+putenv('GOOGLE_BOOKS_API_KEY=xxx...xxx'));
 ```
 
 ```php
-
-$key = file_get_contents(__DIR__.'/GoogleApiServiceKey.json');
-$lookup = new GoogleBooksApi(['key' => $key]);
-
+$lookup = new GoogleBooksApi(['key' => 'xxx...xxx']);
 ```
 
 ## Usage
 
 ### Basic
 
-Get a single book using ISBN.
+Let's get `The Google story` using it's ISBN.
 
-NOTE: Returns null if it can't find it.
+NOTE: The returned value will be null if the query can't find the record.
 
 ```php
-
 $book = (new GoogleBooksApi())
     ->isbn('9780553804577')->first();
-
 ```
 
-This package implements Iterator and Countable so it providers both count and the ability to treat it as an array using a foreach.
+An associative array of values is returned. The contents of the book data is different based on the geolocation of your the host's IP address.
+
+This package implements Iterator and Countable so it provides both count and the ability to treat it as an array using a foreach.
 
 NOTE: Before returning a result, `count` will load the first `page` of results.
 
@@ -64,7 +62,7 @@ NOTE: Before returning a result, `count` will load the first `page` of results.
 ```php
 
 $books = (new GoogleBooksApi())
-    ->query('google');
+    ->search('google');
 
 echo 'Total books in result: ' . count($books) . '; Total pages: '.$lookup->totalPages();
 
@@ -75,17 +73,17 @@ Would output:
 Total books in result: 511; Total pages: 52
 ```
 
-As it implements Interator, calling foreach will load new books as it reaches the end of the current results.
+As it implements `Interator`, calling `foreach` will load new books as it reaches the end of the current results.
 
 If you only want to load a certain number of books, then use `limit` to only load more pages of books.
 
-NOTE: Setting the limit will automatically set the number of records per page (maximum of 40).
+NOTE: Setting the limit will automatically set the number of records per page up to an API maximum of 40. After 40, it will request the remaining values in further API calls.
 
 
 ```php
 
 $books = (new GoogleBooksApi())
-    ->query('google')
+    ->search('google')
     ->limit(12);
 
 echo 'Total: '.count($lookup)."; Pages: ".$lookup->totalPages()."\n";
@@ -110,4 +108,18 @@ Total: 511; Pages: 43
 9 - Python for Google App Engine
 10 - Google and the Law
 11 - Planet Google
+```
+
+You can call `all` to get the complete array of results.
+
+```php
+
+$books = (new GoogleBooksApi())
+    ->search('google')
+    ->limit(12)
+    ->all();
+
+foreach ($books as $key => $book) {
+    echo $key." - ".$book['title']."\n";
+}
 ```
