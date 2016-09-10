@@ -10,12 +10,6 @@
             "email": "rocco@bluora.com.au"
         }
     ],
-    "repositories": [
-        {
-            "type": "git",
-            "url": "https://github.com/bluora/bluora-shared-api-traits.git"
-        }
-    ],
     "require": {
         "php": ">=5.5.0",
          "guzzlehttp/guzzle": "^6.2",
