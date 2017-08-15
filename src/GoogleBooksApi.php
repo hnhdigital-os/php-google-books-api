@@ -235,6 +235,7 @@ class GoogleBooksApi implements \Iterator, \Countable
         if ($value === false) {
             $this->paramaters[$paramater] = $name;
         } else {
+            $this->paramaters[$paramater] = [];
             $this->paramaters[$paramater][$name] = $value;
         }
         return $this;
